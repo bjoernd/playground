@@ -67,16 +67,15 @@ void printVertices(Graph& g)
 	 *    from the templated BGL types. A vertex_iterator does
 	 *    what its name suggests.
 	 */
-	typedef graph_traits<Graph>::vertex_iterator viter;
-	std::pair<viter, viter> vp; // XXX: use tie()
+	graph_traits<Graph>::vertex_iterator vp_start, vp_end;
 
 	/*
 	 * vertices() returns a pair of iterators pointing to the
 	 *     start and end element of the container.
 	 */
-	for (vp = vertices(g); vp.first != vp.second; ++vp.first) {
-		unsigned id = *(vp.first);
-		std::cout << indices[id] << " ";
+	for (tie(vp_start,vp_end) = vertices(g);
+		 vp_start != vp_end; ++vp_start) {
+		std::cout << indices[*vp_start] << " ";
 	}
 
 	std::cout << std::endl;
@@ -90,16 +89,17 @@ void printEdges(Graph& g)
 	/*
 	 * An edge_iterator should be self-explanatory as well.
 	 */
-	graph_traits<Graph>::edge_iterator ei, ei_end;
+	graph_traits<Graph>::edge_iterator edge_start, edge_end;
 
 	/*
 	 * edges() gets (start,end) edge_iterator pair for the graph.
 	 *
 	 * [[Note the use of boost::tie().]]
 	 */
-	for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei) {
-		std::cout << "(" << indices[source(*ei, g)]
-		          << ", " << indices[target(*ei, g)] << ") ";
+	for (tie(edge_start, edge_end) = edges(g);
+		 edge_start != edge_end; ++edge_start) {
+		std::cout << "(" << indices[source(*edge_start, g)]
+		          << ", " << indices[target(*edge_start, g)] << ") ";
 	}
 
 	std::cout << std::endl;
@@ -133,10 +133,11 @@ template <class Graph> struct vertex_visitor
 	void inEdges(const Vertex& v) const
 	{
 		std::cout << B << "      in edges: " << RES;
-		typename GraphTraits::in_edge_iterator in_i, in_end;
+		typename GraphTraits::in_edge_iterator in_start, in_end;
 		typename GraphTraits::edge_descriptor e;
-		for (tie(in_i, in_end) = in_edges(v, g); in_i != in_end; ++in_i) {
-			e = *in_i;
+		for (tie(in_start, in_end) = in_edges(v, g);
+			 in_start != in_end; ++in_start) {
+			e = *in_start;
 			Vertex src = source(e,g);
 			Vertex targ = target(e,g);
 			std::cout << "(" << index[src] << ", " << index[targ] << ") ";
@@ -150,10 +151,11 @@ template <class Graph> struct vertex_visitor
 	void outEdges(const Vertex& v) const
 	{
 		std::cout << B << "     out edges: " << RES;
-		typename GraphTraits::out_edge_iterator out_i, out_end;
+		typename GraphTraits::out_edge_iterator out_start, out_end;
 		typename GraphTraits::edge_descriptor e;
-		for (tie(out_i, out_end) = out_edges(v, g); out_i != out_end; ++out_i) {
-			e = *out_i;
+		for (tie(out_start, out_end) = out_edges(v, g);
+			 out_start != out_end; ++out_start) {
+			e = *out_start;
 			Vertex src = source(e,g);
 			Vertex targ = target(e,g);
 			std::cout << "(" << index[src] << ", " << index[targ] << ") ";
