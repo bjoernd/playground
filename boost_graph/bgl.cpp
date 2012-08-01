@@ -92,7 +92,7 @@ void printVertices(Graph& g)
 
 	/*
 	 * The fun begins: graph_traits allow to infer actual types
-	 *    from the templated BGL types. A vertex_iterator does
+	 *    from the template BGL types. A vertex_iterator does
 	 *    what its name suggests.
 	 */
 	graph_traits<Graph>::vertex_iterator vp_start, vp_end;
@@ -150,7 +150,6 @@ void printEdges(Graph& g)
 template <class Graph> struct vertex_visitor
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor    Vertex;
-	typedef typename property_map<Graph, vertex_index_t>::type IndexType;
 	typedef graph_traits<Graph> GraphTraits;
 
 	vertex_visitor(Graph& _g) : g(_g)
@@ -158,7 +157,7 @@ template <class Graph> struct vertex_visitor
 		 index = get(vertex_index, g);
 	}
 
-	IndexType index;
+	IndexMap index;
 	Graph& g;
 
 	/*
@@ -207,6 +206,26 @@ template <class Graph> struct vertex_visitor
 };
 
 
+/*
+ * Functor that will be called by the Graphviz output writer
+ * for every node in the graph.
+ */
+struct GraphvizNamedVertexWriter
+{
+	GraphvizNamedVertexWriter(Graph& _g)
+		: g(_g)
+	{ }
+
+	Graph&   g;
+
+	template <class Vertex>
+	void operator() (std::ostream& out, const Vertex &v) const
+	{
+		out << " [label=\"" << g[v].name << "\"]";
+	}
+};
+
+
 int main()
 {
 	Graph g;
@@ -223,11 +242,11 @@ int main()
 	 * BGL comes with functions to write the graph into a GraphViz file!
 	 */
 	std::cout << Y << "Graphviz =" << RES << std::endl;
-	write_graphviz(std::cout, g);
+	write_graphviz(std::cout, g, GraphvizNamedVertexWriter(g));
 
 	std::ofstream outfile("foo.dot");
 	if (outfile.is_open()) {
-		write_graphviz(outfile, g);
+		write_graphviz(outfile, g, GraphvizNamedVertexWriter(g));
 	}
 
 	return 0;
