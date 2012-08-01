@@ -19,14 +19,6 @@ typedef adjacency_list<vecS, vecS, bidirectionalS> Graph;
 typedef property_map<Graph, vertex_index_t>::type  IndexMap;
 
 /*
- * Map (vertex -> index no)
- *
- * XXX: could be stored as interior property of the graph
- *      instead of being a global variable
- */
-IndexMap indices;
-
-/*
  * Pretty-printing stuff
  */
 static char const *Y   = "\033[33m";
@@ -69,6 +61,7 @@ void printVertices(Graph& g)
 	 */
 	graph_traits<Graph>::vertex_iterator vp_start, vp_end;
 
+	IndexMap indices = get(vertex_index, g);
 	/*
 	 * vertices() returns a pair of iterators pointing to the
 	 *     start and end element of the container.
@@ -90,6 +83,8 @@ void printEdges(Graph& g)
 	 * An edge_iterator should be self-explanatory as well.
 	 */
 	graph_traits<Graph>::edge_iterator edge_start, edge_end;
+
+	IndexMap indices = get(vertex_index, g);
 
 	/*
 	 * edges() gets (start,end) edge_iterator pair for the graph.
@@ -177,8 +172,6 @@ int main()
 	Graph g;
 
 	fillGraph(g);
-
-	indices = get(vertex_index,  g);
 
 	printVertices(g);
 	printEdges(g);
