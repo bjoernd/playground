@@ -3,13 +3,22 @@
 #include <boost/graph/graphviz.hpp>       // dot output
 #include <iostream>                       // std::cout
 #include <fstream>                        // std::fstream
+#include <string>
 
 using namespace boost;
 
 /*
+ * Type for storing data along with vertices.
+ */
+struct MyVertexInfo
+{
+	std::string name;
+};
+
+/*
  * Graph type
  */
-typedef adjacency_list<vecS, vecS, bidirectionalS> Graph;
+typedef adjacency_list<vecS, vecS, bidirectionalS, MyVertexInfo> Graph;
 
 /*
  * BGL stores vertex properties independent from vertex nodes
@@ -25,6 +34,22 @@ static char const *Y   = "\033[33m";
 static char const *B   = "\033[36m";
 static char const *RES = "\033[0m";
 
+std::string numToStr(unsigned n)
+{
+	switch (n) {
+		case  0: return std::string("zero");
+		case  1: return std::string("one");
+		case  2: return std::string("two");
+		case  3: return std::string("three");
+		case  4: return std::string("four");
+		case  5: return std::string("five");
+		case  6: return std::string("six");
+		case  7: return std::string("seven");
+		case  8: return std::string("eight");
+		case  9: return std::string("nine");
+		default: return std::string("???");
+	}
+};
 
 /*
  * Create graph edges
@@ -46,6 +71,17 @@ void fillGraph(Graph& g)
 	for (unsigned i = 0; i < num_vertices; i++) {
 		add_edge(edges[i].first, edges[i].second, g);
 	}
+
+	/* Now iterate over all vertices and set their name */
+	graph_traits<Graph>::vertex_iterator vp_start, vp_end;
+	IndexMap indices = get(vertex_index, g);
+	for (tie(vp_start, vp_end) = vertices(g);
+		 vp_start != vp_end; ++vp_start) {
+		unsigned idx = indices[*vp_start];
+		g[idx].name = numToStr(idx);
+	}
+
+
 }
 
 
@@ -67,8 +103,12 @@ void printVertices(Graph& g)
 	 *     start and end element of the container.
 	 */
 	for (tie(vp_start,vp_end) = vertices(g);
-		 vp_start != vp_end; ++vp_start) {
-		std::cout << indices[*vp_start] << " ";
+		 vp_start != vp_end; ++vp_start)
+	{
+		unsigned idx = indices[*vp_start];
+		if (vp_start != vertices(g).first) std::cout << " | ";
+		std::cout << idx << " ["
+		          << g[idx].name << "]";
 	}
 
 	std::cout << std::endl;
