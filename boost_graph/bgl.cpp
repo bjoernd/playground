@@ -3,6 +3,7 @@
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 
 using namespace boost;
@@ -135,6 +136,11 @@ int main()
 
 	std::cout << Y << "Graphviz =" << RES << std::endl;
 	write_graphviz(std::cout, g);
+
+	std::ofstream outfile("foo.dot");
+	if (outfile.is_open()) {
+		write_graphviz(outfile, g);
+	}
 
 	return 0;
 }
