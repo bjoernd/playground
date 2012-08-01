@@ -1,22 +1,42 @@
-#include <boost/tuple/tuple.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/connected_components.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
+#include <boost/tuple/tuple.hpp>          // tie()
+#include <boost/graph/adjacency_list.hpp> // adjacency_list
+#include <boost/graph/graphviz.hpp>       // dot output
+#include <iostream>                       // std::cout
+#include <fstream>                        // std::fstream
 
 using namespace boost;
 
+/*
+ * Graph type
+ */
 typedef adjacency_list<vecS, vecS, bidirectionalS> Graph;
-typedef property_map<Graph, vertex_index_t>::type IndexMap;
 
+/*
+ * BGL stores vertex properties independent from vertex nodes
+ * (claiming to separate the generic container from the actual
+ * stored data).
+ */
+typedef property_map<Graph, vertex_index_t>::type  IndexMap;
+
+/*
+ * Map (vertex -> index no)
+ *
+ * XXX: could be stored as interior property of the graph
+ *      instead of being a global variable
+ */
 IndexMap indices;
 
+/*
+ * Pretty-printing stuff
+ */
 static char const *Y   = "\033[33m";
-static char const *B   = "\033[34m";
+static char const *B   = "\033[36m";
 static char const *RES = "\033[0m";
 
+
+/*
+ * Create graph edges
+ */
 void fillGraph(Graph& g)
 {
 	enum { A, B, C, D, E, _END_ };
@@ -42,8 +62,18 @@ void printVertices(Graph& g)
 
 	std::cout << Y << "Vertices = " << RES;
 
+	/*
+	 * The fun begins: graph_traits allow to infer actual types
+	 *    from the templated BGL types. A vertex_iterator does
+	 *    what its name suggests.
+	 */
 	typedef graph_traits<Graph>::vertex_iterator viter;
-	std::pair<viter, viter> vp;
+	std::pair<viter, viter> vp; // XXX: use tie()
+
+	/*
+	 * vertices() returns a pair of iterators pointing to the
+	 *     start and end element of the container.
+	 */
 	for (vp = vertices(g); vp.first != vp.second; ++vp.first) {
 		unsigned id = *(vp.first);
 		std::cout << indices[id] << " ";
@@ -56,8 +86,17 @@ void printVertices(Graph& g)
 void printEdges(Graph& g)
 {
 	std::cout << Y << "Edges    = " << RES;
+
+	/*
+	 * An edge_iterator should be self-explanatory as well.
+	 */
 	graph_traits<Graph>::edge_iterator ei, ei_end;
 
+	/*
+	 * edges() gets (start,end) edge_iterator pair for the graph.
+	 *
+	 * [[Note the use of boost::tie().]]
+	 */
 	for (tie(ei, ei_end) = edges(g); ei != ei_end; ++ei) {
 		std::cout << "(" << indices[source(*ei, g)]
 		          << ", " << indices[target(*ei, g)] << ") ";
@@ -67,6 +106,12 @@ void printEdges(Graph& g)
 }
 
 
+/*
+ * Visitor functor.
+ *
+ * Code below iterates over all vertices. This functor defines
+ * what is to be done with each vertex upon visiting.
+ */
 template <class Graph> struct vertex_visitor
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor    Vertex;
@@ -81,6 +126,10 @@ template <class Graph> struct vertex_visitor
 	IndexType index;
 	Graph& g;
 
+	/*
+	 * Graphs with the bidirectionalS have an additional iterator
+	 * set that allows examining their IN edges.
+	 */
 	void inEdges(const Vertex& v) const
 	{
 		std::cout << B << "      in edges: " << RES;
@@ -95,6 +144,9 @@ template <class Graph> struct vertex_visitor
 		std::cout << std::endl;
 	}
 
+	/*
+	 * out_edges() allows iterating over a vertex' OUT edges.
+	 */
 	void outEdges(const Vertex& v) const
 	{
 		std::cout << B << "     out edges: " << RES;
@@ -121,8 +173,6 @@ template <class Graph> struct vertex_visitor
 int main()
 {
 	Graph g;
-	
-	const char *vert_names = "ABCDE";
 
 	fillGraph(g);
 
@@ -134,6 +184,9 @@ int main()
 	std::cout << Y << "Iterating " << RES << std::endl;
 	std::for_each(vertices(g).first, vertices(g).second, vertex_visitor<Graph>(g));
 
+	/*
+	 * BGL comes with functions to write the graph into a GraphViz file!
+	 */
 	std::cout << Y << "Graphviz =" << RES << std::endl;
 	write_graphviz(std::cout, g);
 
