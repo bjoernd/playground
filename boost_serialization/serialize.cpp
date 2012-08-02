@@ -159,9 +159,6 @@ class Derived2 : public Base
  *    object IDs will then be used to properly create the right instance
  *    object.
  *
- * XXX: Of course, after using the deserialized objects, you need to
- *      free them manually (or use some kind of smart_ptr).
- *
  * Detailed info:
  * http://www.boost.org/doc/libs/1_50_0/libs/serialization/doc/special.html
  */
@@ -200,6 +197,10 @@ void loadVirt()
 	b1->print();
 	b2->print();
 
+	/*
+	 * XXX: Of course, after using the deserialized objects, you need to
+	 *      free them manually (or use some kind of smart_ptr).
+	 */
 	delete b1;
 	delete b2;
 }
