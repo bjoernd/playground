@@ -47,8 +47,8 @@ void storeSimple()
 {
 	SimpleData sd1(4); // single data instance
 
-	std::ofstream out("simple.dat");           // standard C++ file stream
-	boost::archive::binary_oarchive arch(out); // write binary output to file
+	std::ofstream out("simple.dat", std::ios::binary); // standard C++ file stream
+	boost::archive::binary_oarchive arch(out);         // write binary output to file
 
 	std::cout << "Storing data        (" << sd1.num << ")" << std::endl;
 
@@ -61,8 +61,8 @@ void loadSimple()
 
 	std::cout << "plain SimpleData    (" << sd2.num << ")" << std::endl;
 
-	std::ifstream in("simple.dat");           // input file
-	boost::archive::binary_iarchive arch(in); // read binary data
+	std::ifstream in("simple.dat", std::ios::binary); // input file
+	boost::archive::binary_iarchive arch(in);         // read binary data
 	arch >> sd2;
 
 	std::cout << "restored SimpleData (" << sd2.num << ")" << std::endl;
@@ -167,7 +167,7 @@ BOOST_CLASS_EXPORT_GUID(Derived2, "Derived2");
 
 void storeVirt()
 {
-	std::ofstream out("virtual.dat");
+	std::ofstream out("virtual.dat", std::ios::binary);
 	boost::archive::binary_oarchive arch(out);
 
 	Derived1 one(2);
@@ -188,7 +188,7 @@ void storeVirt()
 void loadVirt()
 {
 	Base *b1, *b2;
-	std::ifstream in("virtual.dat");
+	std::ifstream in("virtual.dat", std::ios::binary);
 	boost::archive::binary_iarchive arch(in);
 
 	arch >> b1;
