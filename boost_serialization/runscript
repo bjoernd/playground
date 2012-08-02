@@ -1,0 +1,7 @@
+#!/bin/sh
+
+./sertest
+
+echo "----- simple.dat -----"
+hexdump simple.dat
+rm simple.dat
