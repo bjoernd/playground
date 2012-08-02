@@ -3,5 +3,9 @@
 ./sertest
 
 echo "----- simple.dat -----"
-hexdump simple.dat
+hexdump -C simple.dat
 rm simple.dat
+
+echo "---- virtual.dat ----"
+hexdump -C virtual.dat
+rm virtual.dat
