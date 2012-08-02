@@ -235,18 +235,19 @@ int main()
 	printVertices(g);
 	printEdges(g);
 
-	std::cout << Y << "Iterating " << RES << std::endl;
+	std::cout << Y << "Iterating vertices" << RES << std::endl;
 	std::for_each(vertices(g).first, vertices(g).second, vertex_visitor<Graph>(g));
 
+	GraphvizNamedVertexWriter gnw(g);
 	/*
 	 * BGL comes with functions to write the graph into a GraphViz file!
 	 */
 	std::cout << Y << "Graphviz =" << RES << std::endl;
-	write_graphviz(std::cout, g, GraphvizNamedVertexWriter(g));
+	write_graphviz(std::cout, g, gnw);
 
 	std::ofstream outfile("foo.dot");
 	if (outfile.is_open()) {
-		write_graphviz(outfile, g, GraphvizNamedVertexWriter(g));
+		write_graphviz(outfile, g, gnw);
 	}
 
 	return 0;
