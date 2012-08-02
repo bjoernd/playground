@@ -2,6 +2,7 @@
 #include <boost/serialization/export.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/shared_ptr.hpp>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -188,21 +189,21 @@ void storeVirt()
 void loadVirt()
 {
 	Base *b1, *b2;
+
 	std::ifstream in("virtual.dat", std::ios::binary);
 	boost::archive::binary_iarchive arch(in);
 
 	arch >> b1;
 	arch >> b2;
 
-	b1->print();
-	b2->print();
-
 	/*
 	 * XXX: Of course, after using the deserialized objects, you need to
-	 *      free them manually (or use some kind of smart_ptr).
+	 *      free them manually (or use shared_ptr, some kind of smart_ptr).
 	 */
-	delete b1;
-	delete b2;
+	boost::shared_ptr<Base> c1(b1), c2(b2);
+
+	b1->print();
+	b2->print();
 }
 
 
