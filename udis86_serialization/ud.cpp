@@ -84,17 +84,11 @@ struct udt : public ud_t
 	}
 };
 
-int main()
+
+void storeData(std::vector<udt>& vec, char *file)
 {
-	std::vector<udt> vec;
-	udt x;
-
-	while (ud_disassemble(&x) != 0) {
-		vec.push_back(x);
-	}
-
-	std::cout << "Serializing into vector.dat..." << std::endl;
-	std::ofstream ofs("vector.dat");
+	std::cout << "Serializing into " << file << "..." << std::endl;
+	std::ofstream ofs(file);
 	if (ofs.is_open()) {
 		boost::archive::binary_oarchive arch(ofs);
 		BOOST_FOREACH(udt x, vec) {
@@ -103,25 +97,48 @@ int main()
 		}
 	}
 	ofs.close();
+}
 
-	std::cout << "Reading from vector.dat..." << std::endl;
-	std::vector<udt> vec_read;
-	std::ifstream ifs("vector.dat");
+
+void loadData(std::vector<udt>& vec, char *file)
+{
+	std::cout << "Reading from " << file << "..." << std::endl;
+	std::ifstream ifs(file);
 	boost::archive::binary_iarchive arch(ifs);
 	if (ifs.is_open()) {
 		while (1) {
 			try {
 			udt x;
 			arch >> x;
-			vec_read.push_back(x);
+			vec.push_back(x);
 			} catch (boost::archive::archive_exception) {
 				break;
 			}
 		}
 	}
+}
 
-	BOOST_FOREACH(udt x, vec_read) {
+
+void print_vector(std::vector<udt>& vec)
+{
+	BOOST_FOREACH(udt x, vec) {
 		std::cout << std::setw(10) << std::hex << "0x" << x.pc << " "
 		          << std::setw(16) << ud_insn_hex(&x) << " : " << ud_insn_asm(&x) << std::endl;
 	}
+}
+
+
+int main()
+{
+	std::vector<udt> vec;
+	std::vector<udt> vec_read;
+	udt x;
+
+	while (ud_disassemble(&x) != 0) {
+		vec.push_back(x);
+	}
+
+	storeData(vec, "vector.dat");
+	loadData(vec_read, "vector.dat");
+	print_vector(vec_read);
 }
