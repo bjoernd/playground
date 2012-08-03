@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include <boost/serialization/serialization.hpp>
+#include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/foreach.hpp>
@@ -127,9 +128,7 @@ void storeData(std::vector<udt>& vec, char const *file)
 	std::ofstream ofs(file);
 	if (ofs.is_open()) {
 		boost::archive::binary_oarchive arch(ofs);
-		BOOST_FOREACH(udt x, vec) {
-			arch << x;
-		}
+		arch << vec;
 	}
 	ofs.close();
 }
@@ -141,15 +140,7 @@ void loadData(std::vector<udt>& vec, char const *file)
 	std::ifstream ifs(file);
 	boost::archive::binary_iarchive arch(ifs);
 	if (ifs.is_open()) {
-		while (1) {
-			try {
-			udt x;
-			arch >> x;
-			vec.push_back(x);
-			} catch (boost::archive::archive_exception) {
-				break;
-			}
-		}
+		arch >> vec;
 	}
 }
 
