@@ -2,7 +2,7 @@ OBJ = ud.o
 
 -include Makeconf.udis86
 LDFLAGS += -L$(UDISLIBDIR) -ludis86 -lboost_serialization
-CXXFLAGS = -Wall -I$(UDISINCDIR) 
+CXXFLAGS = -Wall -I$(UDISINCDIR) #-std=c++11
 
 TARGET = udserial
 
