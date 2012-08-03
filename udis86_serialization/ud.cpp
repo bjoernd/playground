@@ -9,10 +9,24 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/foreach.hpp>
 
+/*
+ * libudis86 provides information about decoded data through a C struct. In
+ * order to serialize this struct using boost::serialization, we need to extend
+ * it with a serialize() method. This is achieved below by deriving a new
+ * struct from the C struct that solely adds this function.
+ */
+
+/*
+ * Some 64bit sample input to work on
+ */
 unsigned char input [] = { 0x31, 0xed, 0x49, 0x89, 0xd1, 0x5e,
                            0x48, 0x89, 0xe2, 0x48, 0x83, 0xe4,
                            0xf0, 0x50, 0x54 };
 
+/*
+ * ud_t contains ud_operand members that need to have dedicated
+ * serialization routine as well.
+ */
 struct udop : public ud_operand
 {
 	udop(ud_operand& op)
@@ -33,6 +47,10 @@ struct udop : public ud_operand
 	}
 };
 
+
+/*
+ * Wrapper struct for ud_t
+ */
 struct udt : public ud_t
 {
 	udt()
@@ -49,6 +67,19 @@ struct udt : public ud_t
 		ud_set_input_buffer(this, buffer, bytes);
 	}
 
+	/*
+	 * Serialization.
+	 *
+	 * This method does _not_ serialize all members of ud_t. This would not be
+	 * possible, because ud_t also stores pointers to the local input buffer
+	 * that was used for decoding the byte stream. This means, we'd have to
+	 *    a) serialize all those buffers as well, or
+	 *    b) live with the fact that our restored data will contain
+	 *       invalid pointers.
+	 * Instead of doing so, we only serialize the important non-pointer data
+	 * so we can work with the ud_t, but can't continue decoding after
+	 * deserialization.
+	 */
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
