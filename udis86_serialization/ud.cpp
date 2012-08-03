@@ -13,6 +13,26 @@ unsigned char input [] = { 0x31, 0xed, 0x49, 0x89, 0xd1, 0x5e,
                            0x48, 0x89, 0xe2, 0x48, 0x83, 0xe4,
                            0xf0, 0x50, 0x54 };
 
+struct udop : public ud_operand
+{
+	udop(ud_operand& op)
+	{
+		*this = op;
+	}
+
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & type;
+		ar & size;
+		ar & lval.uqword;
+		ar & base;
+		ar & index;
+		ar & offset;
+		ar & scale;
+	}
+};
+
 struct udt : public ud_t
 {
 	udt()
@@ -27,7 +47,40 @@ struct udt : public ud_t
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
+		ar & insn_offset;
+		ar & insn_hexcode;
+		ar & insn_buffer;
+		ar & insn_fill;
+		ar & dis_mode;
 		ar & pc;
+		ar & vendor;
+
+		ar & mnemonic;
+		ar & static_cast<udop&>(operand[0]);
+		ar & static_cast<udop&>(operand[1]);
+		ar & static_cast<udop&>(operand[2]);
+
+		ar & error;
+		ar & pfx_rex;
+		ar & pfx_seg;
+		ar & pfx_opr;
+		ar & pfx_adr;
+		ar & pfx_lock;
+		ar & pfx_rep;
+		ar & pfx_repe;
+		ar & pfx_repne;
+		ar & pfx_insn;
+		ar & default64;
+		ar & opr_mode;
+		ar & adr_mode;
+		ar & br_far;
+		ar & br_near;
+		ar & implicit_addr;
+		ar & c1;
+		ar & c2;
+		ar & c3;
+		ar & have_modrm;
+		ar & modrm;
 	}
 };
 
@@ -68,6 +121,7 @@ int main()
 	}
 
 	BOOST_FOREACH(udt x, vec_read) {
-		std::cout << std::setw(16) << ud_insn_hex(&x) << " : " << ud_insn_asm(&x) << std::endl;
+		std::cout << std::setw(10) << std::hex << "0x" << x.pc << " "
+		          << std::setw(16) << ud_insn_hex(&x) << " : " << ud_insn_asm(&x) << std::endl;
 	}
 }
