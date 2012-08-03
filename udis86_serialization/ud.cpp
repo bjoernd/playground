@@ -41,7 +41,12 @@ struct udt : public ud_t
 		ud_set_mode(this, 64);
 		ud_set_syntax(this, UD_SYN_INTEL);
 		ud_set_pc(this, 0);
-		ud_set_input_buffer(this, input, sizeof(input));
+	}
+
+	udt(unsigned char *buffer, unsigned bytes)
+		: udt()
+	{
+		ud_set_input_buffer(this, buffer, bytes);
 	}
 
 	template <class Archive>
@@ -85,14 +90,13 @@ struct udt : public ud_t
 };
 
 
-void storeData(std::vector<udt>& vec, char *file)
+void storeData(std::vector<udt>& vec, char const *file)
 {
 	std::cout << "Serializing into " << file << "..." << std::endl;
 	std::ofstream ofs(file);
 	if (ofs.is_open()) {
 		boost::archive::binary_oarchive arch(ofs);
 		BOOST_FOREACH(udt x, vec) {
-			std::cout << std::setw(16) << ud_insn_hex(&x) << " : " << ud_insn_asm(&x) << std::endl;
 			arch << x;
 		}
 	}
@@ -100,7 +104,7 @@ void storeData(std::vector<udt>& vec, char *file)
 }
 
 
-void loadData(std::vector<udt>& vec, char *file)
+void loadData(std::vector<udt>& vec, char const *file)
 {
 	std::cout << "Reading from " << file << "..." << std::endl;
 	std::ifstream ifs(file);
@@ -132,13 +136,14 @@ int main()
 {
 	std::vector<udt> vec;
 	std::vector<udt> vec_read;
-	udt x;
+	udt x(input, sizeof(input));
 
 	while (ud_disassemble(&x) != 0) {
 		vec.push_back(x);
 	}
+	print_vector(vec);
 
-	storeData(vec, "vector.dat");
+	storeData(vec,     "vector.dat");
 	loadData(vec_read, "vector.dat");
 	print_vector(vec_read);
 }
