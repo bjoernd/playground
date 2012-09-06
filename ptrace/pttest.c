@@ -44,13 +44,21 @@ child()
 {
 	call_ptrace(PTRACE_TRACEME, 0, 0, 0);
 	raise(SIGSTOP);
+	static char const *hello = "\033[36;1mhello world\033[0m";
+	printf("%s\n", hello);
 	exit(53);
 }
 
 
 static void
-dumpRegs(struct user_regs_struct* reg)
+dumpRegs(struct user_regs_struct* regs, pid_t child)
 {
+	printf("EAX %08lx EBX %08lx ECX %08lx EDX %08lx\n",
+		   regs->eax, regs->ebx, regs->ecx, regs->edx);
+	printf("ESI %08lx EDI %08lx ESP %08lx EBP %08lx\n",
+		   regs->esi, regs->edi, regs->esp, regs->ebp);
+	printf("EIP %08lx ORA %08lx FLG %08lx ............\n",
+		   regs->eip, regs->orig_eax, regs->eflags);
 }
 
 
@@ -60,17 +68,16 @@ inspect_syscall(pid_t child)
 	static int enteredSyscall = 0;
 	struct user_regs_struct reg;
 
-	int err = call_ptrace(PTRACE_GETREGS, child, 0, &reg);
+	call_ptrace(PTRACE_GETREGS, child, 0, &reg);
 
 	if (!enteredSyscall) {
 		printf("\033[32m------------------------- Inspecting Syscall ------------------------\033[0m\n");
 		enteredSyscall = 1;
-		dumpRegs(&reg);
 	} else {
 		printf("---> ---> --> -->\n");
 		enteredSyscall = 0;
-		dumpRegs(&reg);
 	}
+	dumpRegs(&reg, child);
 }
 
 
@@ -79,8 +86,8 @@ parent(pid_t child)
 {
 	while (1) {
 		int status;
-		int err = call_waitpid(child, &status);
-		printf("wait: %d\n", status);
+		call_waitpid(child, &status);
+		//printf("wait: %d\n", status);
 
 		if (WIFEXITED(status)) {
 			printf("\033[31;1mChild exited with status %d\033[0m\n", WEXITSTATUS(status));
@@ -94,8 +101,11 @@ parent(pid_t child)
 
 		if (WIFSTOPPED(status)) {
 			printf("\033[33mChild stopped with signal %d\033[0m\n", WSTOPSIG(status));
-			if (WSTOPSIG(status) == SIGTRAP) {
+			if (WSTOPSIG(status) == 0x80 | SIGTRAP) {
 				inspect_syscall(child);
+			}
+			if (WSTOPSIG(status) == SIGSTOP) {
+				ptrace(PTRACE_SETOPTIONS, child, 0, PTRACE_O_TRACESYSGOOD);
 			}
 		}
 
