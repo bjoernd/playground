@@ -35,7 +35,6 @@ call_waitpid(pid_t child, int *status)
 	if (ret == -1) {
 		perror("wait");
 	}
-	assert(ret == child);
 	return ret;
 }
 
@@ -43,15 +42,65 @@ call_waitpid(pid_t child, int *status)
 static void
 child()
 {
+	call_ptrace(PTRACE_TRACEME, 0, 0, 0);
+	raise(SIGSTOP);
+	exit(53);
+}
+
+
+static void
+dumpRegs(struct user_regs_struct* reg)
+{
+}
+
+
+static void
+inspect_syscall(pid_t child)
+{
+	static int enteredSyscall = 0;
+	struct user_regs_struct reg;
+
+	int err = call_ptrace(PTRACE_GETREGS, child, 0, &reg);
+
+	if (!enteredSyscall) {
+		printf("\033[32m------------------------- Inspecting Syscall ------------------------\033[0m\n");
+		enteredSyscall = 1;
+		dumpRegs(&reg);
+	} else {
+		printf("---> ---> --> -->\n");
+		enteredSyscall = 0;
+		dumpRegs(&reg);
+	}
 }
 
 
 static void
 parent(pid_t child)
 {
-	int status;
-	call_waitpid(child, &status);
-	printf("wait: %d\n", status);
+	while (1) {
+		int status;
+		int err = call_waitpid(child, &status);
+		printf("wait: %d\n", status);
+
+		if (WIFEXITED(status)) {
+			printf("\033[31;1mChild exited with status %d\033[0m\n", WEXITSTATUS(status));
+			return;
+		}
+
+		if (WIFSIGNALED(status)) {
+			printf("\033[31;1mChild was killed by signal %d\033[0m\n", WTERMSIG(status));
+			return;
+		}
+
+		if (WIFSTOPPED(status)) {
+			printf("\033[33mChild stopped with signal %d\033[0m\n", WSTOPSIG(status));
+			if (WSTOPSIG(status) == SIGTRAP) {
+				inspect_syscall(child);
+			}
+		}
+
+		call_ptrace(PTRACE_SYSCALL, child, 0, 0);
+	}
 }
 
 
