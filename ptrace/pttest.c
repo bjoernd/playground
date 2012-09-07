@@ -11,6 +11,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "mypt.h"
+
 static long
 call_ptrace(int op, pid_t child, void *addr, void *data)
 {
@@ -71,13 +73,15 @@ inspect_syscall(pid_t child)
 	call_ptrace(PTRACE_GETREGS, child, 0, &reg);
 
 	if (!enteredSyscall) {
-		printf("\033[32m------------------------- Inspecting Syscall ------------------------\033[0m\n");
+		//printf("\033[32m------------------------- Inspecting Syscall ------------------------\033[0m\n");
 		enteredSyscall = 1;
+		printf("Syscall: %ld (%s)\n", reg.orig_eax, sysno32((unsigned)reg.orig_eax));
 	} else {
-		printf("---> ---> --> -->\n");
+		//printf("---> ---> --> -->\n");
 		enteredSyscall = 0;
+		printf(" return: %ld (%lx)\n", reg.eax, reg.eax);
 	}
-	dumpRegs(&reg, child);
+	//dumpRegs(&reg, child);
 }
 
 
@@ -100,8 +104,8 @@ parent(pid_t child)
 		}
 
 		if (WIFSTOPPED(status)) {
-			printf("\033[33mChild stopped with signal %d\033[0m\n", WSTOPSIG(status));
-			if (WSTOPSIG(status) == 0x80 | SIGTRAP) {
+			//printf("\033[33mChild stopped with signal %d\033[0m\n", WSTOPSIG(status));
+			if (WSTOPSIG(status) == (0x80 | SIGTRAP)) {
 				inspect_syscall(child);
 			}
 			if (WSTOPSIG(status) == SIGSTOP) {
@@ -118,6 +122,7 @@ int
 main()
 {
 	pid_t pid = fork();
+	init32();
 
 	if (pid == 0) {
 		child();
