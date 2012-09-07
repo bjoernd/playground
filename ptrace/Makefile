@@ -1,7 +1,7 @@
 OBJ=pttest.o sys32.o sys64.o
 
 TARGET=pt
-CFLAGS=-Wall
+CFLAGS+=-Wall
 
 .PHONY : all clean cleanall
 

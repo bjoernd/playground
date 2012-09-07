@@ -13,6 +13,8 @@
 
 #include "mypt.h"
 
+#define DEBUG 0
+
 static long
 call_ptrace(int op, pid_t child, void *addr, void *data)
 {
@@ -55,12 +57,27 @@ child()
 static void
 dumpRegs(struct user_regs_struct* regs, pid_t child)
 {
+#if DEBUG
+#if __WORDSIZE == 32
 	printf("EAX %08lx EBX %08lx ECX %08lx EDX %08lx\n",
 		   regs->eax, regs->ebx, regs->ecx, regs->edx);
 	printf("ESI %08lx EDI %08lx ESP %08lx EBP %08lx\n",
 		   regs->esi, regs->edi, regs->esp, regs->ebp);
 	printf("EIP %08lx ORA %08lx FLG %08lx ............\n",
 		   regs->eip, regs->orig_eax, regs->eflags);
+#else
+	printf("R15 %016lx R14 %016lx R13 %016lx R12 %016lx\n",
+		   regs->r15, regs->r14, regs->r13, regs->r12);
+	printf("R11 %016lx R10 %016lx R09 %016lx R08 %016lx\n",
+		   regs->r11, regs->r12, regs->r9, regs->r8);
+	printf("RAX %016lx RBX %016lx RCX %016lx RDX %016lx\n",
+		   regs->rax, regs->rbx, regs->rcx, regs->rdx);
+	printf("RSI %016lx RDI %016lx RSP %016lx RBP %016lx\n",
+		   regs->rsi, regs->rdi, regs->rsp, regs->rbp);
+	printf("EIP %016lx ORA %016lx FLG %016lx ............\n",
+		   regs->rip, regs->orig_rax, regs->eflags);
+#endif // __WORDSIZE
+#endif // DEBUG
 }
 
 
@@ -68,20 +85,37 @@ static void
 inspect_syscall(pid_t child)
 {
 	static int enteredSyscall = 0;
-	struct user_regs_struct reg;
+	struct user_regs_struct reg; // always the right type (chosen in sys/user.h)
 
 	call_ptrace(PTRACE_GETREGS, child, 0, &reg);
 
 	if (!enteredSyscall) {
 		//printf("\033[32m------------------------- Inspecting Syscall ------------------------\033[0m\n");
 		enteredSyscall = 1;
-		printf("Syscall: %ld (%s)\n", reg.orig_eax, sysno32((unsigned)reg.orig_eax));
+		long sysno;
+#if __WORDSIZE == 32
+		sysno = reg.orig_eax;
+#else
+		sysno = reg.orig_rax & 0xFFFFFFFF;
+#endif
+		printf("Syscall: %ld (%s) = ", sysno,
+#if __WORDSIZE == 32
+			   sysno32(sysno)
+#else
+			   sysno64(sysno)
+#endif
+			   );
 	} else {
 		//printf("---> ---> --> -->\n");
 		enteredSyscall = 0;
-		printf(" return: %ld (%lx)\n", reg.eax, reg.eax);
+#if __WORDSIZE == 32
+		printf(" return: %ld (0x%lx)\n", reg.eax, reg.eax);
+#else
+		printf(" return: %lld (0x%llx)\n", reg.rax, reg.rax);
+#endif
 	}
-	//dumpRegs(&reg, child);
+
+	dumpRegs(&reg, child);
 }
 
 
@@ -123,6 +157,9 @@ main()
 {
 	pid_t pid = fork();
 	init32();
+#if __WORDSIZE == 64
+	init64();
+#endif
 
 	if (pid == 0) {
 		child();
