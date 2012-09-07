@@ -111,7 +111,7 @@ inspect_syscall(pid_t child)
 #if __WORDSIZE == 32
 		printf(" return: %ld (0x%lx)\n", reg.eax, reg.eax);
 #else
-		printf(" return: %lld (0x%llx)\n", reg.rax, reg.rax);
+		printf(" return: %ld (0x%lx)\n", reg.rax, reg.rax);
 #endif
 	}
 
