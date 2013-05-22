@@ -43,6 +43,8 @@ extern void vdso_init_from_auxv(void *auxv);
 extern void vdso_init_from_sysinfo_ehdr(uintptr_t base);
 extern void *vdso_sym(const char *version, const char *name);
 
+extern void vdso_iterate(void);
+
 
 /* And here's the code. */
 
@@ -241,11 +243,32 @@ void *vdso_sym(const char *version, const char *name)
 	return 0;
 }
 
-
-void vdso_iterate()
+void vdso_iterate(void)
 {
-}
+	printf("[VDSO] nbucket: %d nchain %d\n", vdso_info.nbucket,
+	       vdso_info.nchain);
 
+	uint64_t bucket, chain;
+
+	for (bucket = 0; bucket < vdso_info.nbucket; ++bucket) {
+		printf("[VDSO] ---- Bucket %4lu ---\n", bucket);
+
+		for (chain = vdso_info.bucket[bucket]; chain != STN_UNDEF;
+		     chain = vdso_info.chain[chain]) {
+			Elf64_Sym *sym = &vdso_info.symtab[chain];
+
+			if (ELF64_ST_TYPE(sym->st_info) != STT_FUNC)
+				continue;
+			if (ELF64_ST_BIND(sym->st_info) != STB_GLOBAL &&
+				ELF64_ST_BIND(sym->st_info) != STB_WEAK)
+				continue;
+			if (sym->st_shndx == SHN_UNDEF)
+				continue;
+
+			printf("    Sym %p: %s\n", sym, vdso_info.symstrings + sym->st_name);
+		}
+	}
+}
 
 void vdso_init_from_auxv(void *auxv)
 {
