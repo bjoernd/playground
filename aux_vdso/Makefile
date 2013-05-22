@@ -1,11 +1,11 @@
-TARGET = ex_vdso
+TARGET  = ex_vdso
 
-SRC_C = parse_vdso.c main.c
-CFLAGS = -Wall -std=c99 -Wno-pointer-sign
-CC=colorgcc
+SRC_C   = parse_vdso.c main.c
+CFLAGS  = -Wall -std=c99 -Wno-pointer-sign
+CC      = clang
 
 $(TARGET) : $(SRC_C:.c=.o)
-	$(CC) -o $(TARGET) $?
+	$(CC) -o $(TARGET) $(SRC_C:.c=.o)
 
 .PHONY : clean
 
