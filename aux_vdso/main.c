@@ -10,12 +10,16 @@ extern void vdso_iterate();
 
 int main(int argc, char **argv, char **envp)
 {
+	/* First we need to get to the aux pointer, which
+	 * is the one after the final NULL terminating the
+	 * environment variables.
+	 */
 	while (*envp)
 		envp++;
 
-	printf("auxp: %p\n", ++envp);
+	// init vdso parser
 	vdso_init_from_auxv(envp);
-
+	// print symbols
 	vdso_iterate();
 	
 	return 0;

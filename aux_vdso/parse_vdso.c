@@ -257,6 +257,9 @@ void vdso_iterate(void)
 		     chain = vdso_info.chain[chain]) {
 			Elf64_Sym *sym = &vdso_info.symtab[chain];
 
+			/* As in vdso_sym: we are only interested in those symbols
+			 * that can actually be queried by it.
+			 */
 			if (ELF64_ST_TYPE(sym->st_info) != STT_FUNC)
 				continue;
 			if (ELF64_ST_BIND(sym->st_info) != STB_GLOBAL &&
