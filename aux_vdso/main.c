@@ -16,6 +16,7 @@ int main(int argc, char **argv, char **envp)
 	 */
 	while (*envp)
 		envp++;
+	++envp;
 
 	// init vdso parser
 	vdso_init_from_auxv(envp);
