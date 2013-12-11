@@ -11,10 +11,11 @@ fn eratosthenes(max : uint) -> ~[bool]
 	prime
 }
 
+
 fn main()
 {
 	enum vals {
-		MAX_NUM = 256,
+		MAX_NUM = 1024,
 	};
 	
 	println("Sieve of Erathosthenes");
