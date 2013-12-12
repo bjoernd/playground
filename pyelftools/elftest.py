@@ -86,9 +86,8 @@ def singleSymbolInfo(sym, demangle):
             name = subprocess.check_output(["c++filt", sym.name]).strip()
         else:
             name = sym.name
-        print "\033[33m0x%08x \033[32m%50s\033[0m"  % \
-            (sym.entry["st_value"], name),
-        print "%15s" % st_type
+        print "\033[33m0x%08x\033[0m %15s \033[32m%s\033[0m"  % \
+            (sym.entry["st_value"], st_type, name)
 
 
 def symbolInfo(elffile, demangle):
