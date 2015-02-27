@@ -3,3 +3,4 @@
 *.o
 ex_vdso
 ex_kvm
+.ycm_extra*
