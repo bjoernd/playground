@@ -1,0 +1,5 @@
+[package]
+
+name = "variables"
+version = "0.0.1"
+authors = ["Björn Döbel <bjoern.doebel@gmail.com>"]
