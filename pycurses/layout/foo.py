@@ -68,6 +68,11 @@ def test_windows(screen):
     win_topleft.border()
     win_topleft.addstr(0, 4, "[Map Window]", curses.color_pair(5))
     win_topleft.addstr(1, 1, ("Window size: (lines=%d, cols=%d)" % (top_rows, left_cols)))
+    y, x = win_topleft.getmaxyx()
+    win_topleft.addstr(2, 1, ("Window size (curses): lines = %d, cols = %d" % (y, x)))
+    win_topleft.addstr(3, 1, ("Screen size (ssize):  lines = %d, cols = %d" % (rows, cols)))
+    y, x = screen.getmaxyx()
+    win_topleft.addstr(4, 1, ("Screen size (curses): lines = %d, cols = %d" % (y, x)))
     win_topleft.refresh()
 
     win_topright = curses.newwin(rows, right_cols, 0, left_cols)
