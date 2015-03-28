@@ -103,6 +103,7 @@ class LogWindow(Window):
 
 
     class LogStream(object):
+        """A list of messages and the corresponding scroll state"""
         def __init__(self):
             self.messages = []
             self.first_msg_on_screen = -1 # -1   -> log last N messages that fit
@@ -116,6 +117,7 @@ class LogWindow(Window):
             return self.first_msg_on_screen
 
     class LogMessage(object):
+        """A single log message. Stores a style along with it."""
         def __init__(self, msg, style=None):
             self.message = msg
             self.style   = style
@@ -154,6 +156,7 @@ class LogWindow(Window):
         # We have to print all chars in data + the spaces in between
         total_chars = sum([len(x) for x in data]) + len(data)
 
+        # If our message fits, we go printing and highlight the active stream
         if total_chars < (self.Width - 2 * self.title_spacing):
             col = self.title_spacing
             self.write_string_with_style("[%s" % self.title, 0, col, self.title_style)
@@ -166,8 +169,20 @@ class LogWindow(Window):
                 self.write_string_with_style(msg, 0, col, st)
                 col += len(msg)
             self.write_string_with_style("]", 0, col, self.title_style)
-        else:
-            self.write_string_with_style("[XXX title too long]", 0, 1, self.title_style)
+        else: # try shortening the title
+            msg = "[%s ..%s..]" % (self.title, self.active_stream)
+            if len(msg) < (self.Width - 2 * self.title_spacing):
+                part1 = "[%s .." % self.title
+                part2 = "%s" % self.active_stream
+                part3 = ".. ]"
+                col = self.title_spacing
+                self.write_string_with_style(part1, 0, col, self.title_style)
+                col += len(part1)
+                self.write_string_with_style(part2, 0, col, self.title_style ^ curses.A_BOLD)
+                col += len(part2)
+                self.write_string_with_style(part3, 0, col, self.title_style)
+            else:
+                self.write_string_with_style("[XXX title too long]", 0, 1, self.title_style)
 
     def log(self, message, style = None, stream = None):
         """Log a new message."""
@@ -338,8 +353,7 @@ def main(screen):
 
     for i in range(30):
         w.log("[%d] height %d" % (i, w.max_lines()), colorManager.color("white"), "2-Numbers")
-        w.refresh()
-        time.sleep(.1)
+    w.refresh()
 
     w.log_ts("<PgUp>   - scroll up", colorManager.color("yellow"), stream="1-Logs")
     w.log_ts("<PgDown> - scroll down", colorManager.color("yellow"), stream="1-Logs")
@@ -356,6 +370,11 @@ def main(screen):
             w.refresh()
         elif c == curses.KEY_NPAGE: # scroll down
             w.scroll(2)
+            w.refresh()
+        elif chr(c) == 'n': # add streams to overflow title line
+            w.addStream("foobarbaz")
+            w.addStream("helloworld")
+            w.addStream("highwaytohell")
             w.refresh()
         elif chr(c) == 'q':
             break
