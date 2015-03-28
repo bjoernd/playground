@@ -324,7 +324,7 @@ def main(screen):
 
     y, x = screen.getmaxyx()
 
-    w = LogWindow(screen, 53, int(y/3), 1, 1)
+    w = LogWindow(screen, int(x/2), int(y/3), 1, 1)
     w.setTitle("Log Window", colorManager.color("magenta"))
     w.addStream("1-Logs")
     w.show_stream("1-Logs")
@@ -333,7 +333,7 @@ def main(screen):
     w.log("This is a very first test message.")
     w.log_ts("And something with a timestamp")
     w.log("This is a totally bold test message.", curses.A_BOLD)
-    w.log("This is an extremely (as in TU Dresden green) green test message.", colorManager.color("green"))
+    w.log("This is an extremely (as in TU Dresden green) green test message.", colorManager.color("green") | curses.A_BOLD)
     w.refresh()
 
     for i in range(30):
@@ -341,11 +341,11 @@ def main(screen):
         w.refresh()
         time.sleep(.1)
 
-    w.log_ts("<PgUp>   - scroll up", stream="1-Logs")
-    w.log_ts("<PgDown> - scroll down", stream="1-Logs")
-    w.log_ts("<Alt+1>  - Log Stream", stream="1-Logs")
-    w.log_ts("<Alt+2>  - Numbers Stream", stream="1-Logs")
-    w.log_ts("q        - Quit", stream="1-Logs")
+    w.log_ts("<PgUp>   - scroll up", colorManager.color("yellow"), stream="1-Logs")
+    w.log_ts("<PgDown> - scroll down", colorManager.color("yellow"), stream="1-Logs")
+    w.log_ts("<Alt+1>  - Log Stream", colorManager.color("yellow"), stream="1-Logs")
+    w.log_ts("<Alt+2>  - Numbers Stream", colorManager.color("yellow"), stream="1-Logs")
+    w.log_ts("q        - Quit", colorManager.color("yellow"), stream="1-Logs")
 
     while True:
         w.refresh()
