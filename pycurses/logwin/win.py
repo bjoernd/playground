@@ -3,6 +3,7 @@
 
 import curses
 import time
+import datetime
 
 class ColorManager(object):
     """Maintains a mapping from <textual description> of a color
@@ -53,16 +54,11 @@ class Window(object):
         self.width  = width
         self.win    = curses.newwin(height, width, posy, posx)
 
-        self.title_spacing = 2
-        self.title = ""
-        self.title_style = None
-
         self.win.border()
 
     def clear(self):
         self.win.clear()
         self.win.border()
-        self.paintTitle()
 
     def refresh(self):
         """Refresh the window after drawing."""
@@ -71,25 +67,6 @@ class Window(object):
     def getch(self):
         """Get input character."""
         return self.win.getch()
-
-    def setTitle(self, title, style = None):
-        """Set the window title.
-
-        The title will be rendered into the top border. The title
-        will be cut short if the window is too narrow. """
-        if len(title) < (self.width - 2 * self.title_spacing - 4):
-            self.title = "[" + title + "]"
-        else:
-            self.title = "[" + title[:self.width-2*self.title_spacing - 4] + "..]"
-        self.title_style = style
-
-        self.paintTitle()
-
-    def paintTitle(self):
-        if self.title_style is None:
-            self.win.addstr(0, self.title_spacing, self.title)
-        else:
-            self.win.addstr(0, self.title_spacing, self.title, self.title_style)
 
     @property
     def Width(self):
@@ -113,6 +90,10 @@ class LogWindow(Window):
                                       # >=0  -> log messages starting at msg N
         self.win.keypad(1)
 
+        self.title_spacing = 2
+        self.title = ""
+        self.title_style = None
+
     class LogMessage(object):
         def __init__(self, msg, style=None):
             self.message = msg
@@ -130,6 +111,28 @@ class LogWindow(Window):
         def Length(self):
             return len(self.message)
 
+    def clear(self):
+        super(LogWindow, self).clear()
+        self.paintTitle()
+
+    def setTitle(self, title, style = None):
+        """Set the window title.
+
+        The title will be rendered into the top border. The title
+        will be cut short if the window is too narrow. """
+        if len(title) < (self.width - 2 * self.title_spacing - 4):
+            self.title = "[" + title + "]"
+        else:
+            self.title = "[" + title[:self.width-2*self.title_spacing - 4] + "..]"
+        self.title_style = style
+
+        self.paintTitle()
+
+    def paintTitle(self):
+        if self.title_style is None:
+            self.win.addstr(0, self.title_spacing, self.title)
+        else:
+            self.win.addstr(0, self.title_spacing, self.title, self.title_style)
 
     def log(self, message, style = None):
         """Log a new message."""
@@ -137,6 +140,13 @@ class LogWindow(Window):
         self.messages.append(m)
         # new msg always scrolls down
         self.first_msg_on_screen = -1
+
+    def log_ts(self, message, style = None):
+        """Log message adding a timestamp"""
+        now = datetime.datetime.now()
+        self.log("[%02d.%02d.%04d %02d:%02d:%02d] %s" % \
+                 (now.day, now.month, now.year, now.hour, now.minute,
+                  now.second, message), style)
 
     def max_chars_per_line(self):
         """Maximum characters that can fit into a line when writing
@@ -250,6 +260,7 @@ def main(screen):
     w.setTitle("Log Window", colorManager.color("magenta"))
 
     w.log("This is a very first test message.")
+    w.log_ts("And something with a timestamp")
     w.log("This is a totally bold test message.", curses.A_BOLD)
     w.log("This is an extremely (as in TU Dresden green) green test message.", colorManager.color("green"))
     w.refresh()
