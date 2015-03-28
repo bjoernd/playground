@@ -5,6 +5,9 @@ import curses
 import time
 import datetime
 
+# DEBUGGING
+mylogfile = open("log.txt", "w")
+
 class ColorManager(object):
     """Maintains a mapping from <textual description> of a color
        to the respective curses color pair object.
@@ -90,11 +93,8 @@ class LogWindow(Window):
     """
     def __init__(self, screen, width, height, posx, posy):
         super(LogWindow, self).__init__(screen, width, height, posx, posy)
-        self.active_stream       = "Default"
-        self.logstreams          = {
-            "Default" : LogWindow.LogStream(),
-            }
-
+        self.active_stream       = None
+        self.logstreams          = { }
         self.win.keypad(1)
 
         self.title_spacing = 2
@@ -141,34 +141,71 @@ class LogWindow(Window):
 
         The title will be rendered into the top border. The title
         will be cut short if the window is too narrow. """
-        if len(title) < (self.width - 2 * self.title_spacing - 4):
-            self.title = "[" + title + "]"
-        else:
-            self.title = "[" + title[:self.width-2*self.title_spacing - 4] + "..]"
+        self.title = title
         self.title_style = style
-
         self.paintTitle()
 
     def paintTitle(self):
-        if self.title_style is None:
-            self.win.addstr(0, self.title_spacing, self.title)
-        else:
-            self.win.addstr(0, self.title_spacing, self.title, self.title_style)
+        data = ["[%s" % self.title]
+        titles = sorted(self.logstreams.keys())
+        for k in titles:
+            data.append(" %s" % k)
+        data.append("]")
+        # We have to print all chars in data + the spaces in between
+        total_chars = sum([len(x) for x in data]) + len(data)
 
-    def log(self, message, style = None):
+        if total_chars < (self.Width - 2 * self.title_spacing):
+            col = self.title_spacing
+            self.write_string_with_style("[%s" % self.title, 0, col, self.title_style)
+            col += (1+len(self.title))
+            for k in titles:
+                st = self.title_style
+                if k == self.active_stream:
+                    st = self.title_style ^ curses.A_BOLD
+                msg = " %s" % k
+                self.write_string_with_style(msg, 0, col, st)
+                col += len(msg)
+            self.write_string_with_style("]", 0, col, self.title_style)
+        else:
+            self.write_string_with_style("[XXX title too long]", 0, 1, self.title_style)
+
+    def log(self, message, style = None, stream = None):
         """Log a new message."""
         m = LogWindow.LogMessage(message, style)
-        stream = self.logstreams[self.active_stream]
-        stream.Messages.append(m)
+        if stream is None:
+            if self.active_stream is not None:
+                target = self.logstreams[self.active_stream]
+            else:
+                raise ValueError("Logging without active stream")
+        else:
+            target = self.logstreams[stream]
+        target.Messages.append(m)
         # new msg always scrolls down
-        stream.FirstMsg = -1
+        target.first_msg_on_screen = -1
 
-    def log_ts(self, message, style = None):
+    def log_ts(self, message, style = None, stream = None):
         """Log message adding a timestamp"""
         now = datetime.datetime.now()
         self.log("[%02d.%02d.%04d %02d:%02d:%02d] %s" % \
                  (now.day, now.month, now.year, now.hour, now.minute,
-                  now.second, message), style)
+                  now.second, message), style, stream)
+
+    def addStream(self, name):
+        self.logstreams[name] = LogWindow.LogStream()
+
+    def deleteStream(self, name):
+        if name in self.logstreams.keys():
+            self.logstreams.pop(name)
+        if self.active_stream == name:
+            if len(self.logstreams.keys()) == 0:
+                print("WARNING: Removed last existing log stream")
+            else:
+                self.active_stream = list(self.logstreams.keys())[0]
+
+    def show_stream(self, name):
+        if name in self.logstreams.keys():
+            self.active_stream = name
+        self.refresh()
 
     def max_chars_per_line(self):
         """Maximum characters that can fit into a line when writing
@@ -194,8 +231,8 @@ class LogWindow(Window):
         # to fit as many messages as possible from the end of the msg list.
         # In scrolled state, start fitting from the first_msg_on_screen
 
-        if self.logstreams[self.active_stream].FirstMsg >= 0:
-            msg_candidates = msglist[self.logstreams[self.active_stream].FirstMsg:]
+        if self.logstreams[self.active_stream].FirstMsg() >= 0:
+            msg_candidates = msglist[self.logstreams[self.active_stream].FirstMsg():]
         else:
             msg_candidates = reversed(msglist)
 
@@ -208,14 +245,17 @@ class LogWindow(Window):
 
         return num_msg
 
+    def write_string_with_style(self, msg, line, col, style = None):
+        if style is None:
+            self.win.addstr(line, col, msg)
+        else:
+            self.win.addstr(line, col, msg, style)
 
-    def write_line_with_style(self, line, style, lineno):
+
+    def write_line_with_style(self, msg, style, lineno):
         """Write a single line of message text into line given by
            <lineno> and apply the given <style>."""
-        if style is None:
-            self.win.addstr(lineno, 1, line)
-        else:
-            self.win.addstr(lineno, 1, line, style)
+        self.write_string_with_style(msg, lineno, 1, style)
 
 
     def write_msg(self, msg, lineno):
@@ -242,10 +282,10 @@ class LogWindow(Window):
     def scroll(self, offset):
         current_msgs = self.fit_messages()
         stream = self.logstreams[self.active_stream]
-        if stream.FirstMsg == -1:
+        if stream.FirstMsg() == -1:
             new_offs = len(stream.Messages) - current_msgs + offset
         else:
-            new_offs = stream.FirstMsg + offset
+            new_offs = stream.FirstMsg() + offset
 
         if new_offs < 0:
             new_offs = 0
@@ -253,7 +293,7 @@ class LogWindow(Window):
         if new_offs > len(stream.Messages) - current_msgs:
             new_offs = -1
 
-        stream.FirstMsg = new_offs
+        stream.first_msg_on_screen = new_offs
         self.refresh()
 
 
@@ -265,10 +305,10 @@ class LogWindow(Window):
             lineno = 1 # start at line 1 (0 is window border / title)
             stream = self.logstreams[self.active_stream]
 
-            if stream.FirstMsg < 0: # non-scrolled
+            if stream.FirstMsg() < 0: # non-scrolled
                 printed_msgs = stream.Messages[-num_messages:]
             else:
-                printed_msgs = stream.Messages[stream.FirstMsg:stream.FirstMsg + num_messages]
+                printed_msgs = stream.Messages[stream.FirstMsg():stream.FirstMsg() + num_messages]
 
             for m in printed_msgs:
                 lines = self.write_msg(m, lineno)
@@ -284,8 +324,11 @@ def main(screen):
 
     y, x = screen.getmaxyx()
 
-    w = LogWindow(screen, int(x/2), int(y/3), 1, 1)
+    w = LogWindow(screen, 53, int(y/3), 1, 1)
     w.setTitle("Log Window", colorManager.color("magenta"))
+    w.addStream("1-Logs")
+    w.show_stream("1-Logs")
+    w.addStream("2-Numbers")
 
     w.log("This is a very first test message.")
     w.log_ts("And something with a timestamp")
@@ -294,24 +337,40 @@ def main(screen):
     w.refresh()
 
     for i in range(30):
-        w.log("[%d] height %d" % (i, w.max_lines()), colorManager.color("white"))
+        w.log("[%d] height %d" % (i, w.max_lines()), colorManager.color("white"), "2-Numbers")
         w.refresh()
         time.sleep(.1)
 
-    w.log_ts("Press any key...")
-    w.refresh()
+    w.log_ts("<PgUp>   - scroll up", stream="1-Logs")
+    w.log_ts("<PgDown> - scroll down", stream="1-Logs")
+    w.log_ts("<Alt+1>  - Log Stream", stream="1-Logs")
+    w.log_ts("<Alt+2>  - Numbers Stream", stream="1-Logs")
+    w.log_ts("q        - Quit", stream="1-Logs")
 
     while True:
+        w.refresh()
         c = w.getch()
-        if c == curses.KEY_PPAGE:
+
+        if c == curses.KEY_PPAGE:   # scroll up
             w.scroll(-2)
             w.refresh()
-        elif c == curses.KEY_NPAGE:
+        elif c == curses.KEY_NPAGE: # scroll down
             w.scroll(2)
             w.refresh()
+        elif chr(c) == 'q':
+            break
+        elif c == 27:               # ALT + next char -> select win
+            w.win.nodelay(True)
+            c2 = w.getch()
+            if chr(c2) == '1':
+                w.show_stream("1-Logs")
+            if chr(c2) == '2':
+                w.show_stream("2-Numbers")
+            w.win.nodelay(False)
         else:
             break
 
 
 if __name__ == "__main__":
     curses.wrapper(main)
+    mylogfile.close()
