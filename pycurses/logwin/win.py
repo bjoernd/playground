@@ -80,19 +80,40 @@ class Window(object):
 
 
 class LogWindow(Window):
-    """A specialized window that collects a list of log messages, renders
-       the most recent ones by default and allows scrolling through older
-       messages."""
+    """A window that collects a list of log messages.
+
+       Logs can be split into multiple streams where each stream is rendered
+       into a separate tab/subwindow.
+
+       A single stream renders the most recent ones by default and allows
+       scrolling through older messages.
+    """
     def __init__(self, screen, width, height, posx, posy):
         super(LogWindow, self).__init__(screen, width, height, posx, posy)
-        self.messages            = [] # list of messages
-        self.first_msg_on_screen = -1 # -1   -> log last N messages that fit
-                                      # >=0  -> log messages starting at msg N
+        self.active_stream       = "Default"
+        self.logstreams          = {
+            "Default" : LogWindow.LogStream(),
+            }
+
         self.win.keypad(1)
 
         self.title_spacing = 2
         self.title = ""
         self.title_style = None
+
+
+    class LogStream(object):
+        def __init__(self):
+            self.messages = []
+            self.first_msg_on_screen = -1 # -1   -> log last N messages that fit
+                                          # >=0  -> log messages starting at msg N
+
+        @property
+        def Messages(self):
+            return self.messages
+
+        def FirstMsg(self):
+            return self.first_msg_on_screen
 
     class LogMessage(object):
         def __init__(self, msg, style=None):
@@ -137,9 +158,10 @@ class LogWindow(Window):
     def log(self, message, style = None):
         """Log a new message."""
         m = LogWindow.LogMessage(message, style)
-        self.messages.append(m)
+        stream = self.logstreams[self.active_stream]
+        stream.Messages.append(m)
         # new msg always scrolls down
-        self.first_msg_on_screen = -1
+        stream.FirstMsg = -1
 
     def log_ts(self, message, style = None):
         """Log message adding a timestamp"""
@@ -164,16 +186,18 @@ class LogWindow(Window):
         num_msg       = 0 # number of messages to print
         printed_lines = 0 # number of lines taken by those messages
 
+        msglist = self.logstreams[self.active_stream].Messages
+
         # We iterate over all messages, see how many lines they occupy
         # and then fit as many messages as possible into the screen.
         # Behavior depends on scroll state: if we are unscrolled, try
         # to fit as many messages as possible from the end of the msg list.
         # In scrolled state, start fitting from the first_msg_on_screen
 
-        if self.first_msg_on_screen >= 0:
-            msg_candidates = self.messages[self.first_msg_on_screen:]
+        if self.logstreams[self.active_stream].FirstMsg >= 0:
+            msg_candidates = msglist[self.logstreams[self.active_stream].FirstMsg:]
         else:
-            msg_candidates = reversed(self.messages)
+            msg_candidates = reversed(msglist)
 
         for msg in msg_candidates:
             lines_for_msg = int(1 + msg.Length / self.max_chars_per_line())
@@ -214,21 +238,24 @@ class LogWindow(Window):
 
         return nchunks
 
+
     def scroll(self, offset):
         current_msgs = self.fit_messages()
-        if self.first_msg_on_screen == -1:
-            new_offs = len(self.messages) - current_msgs + offset
+        stream = self.logstreams[self.active_stream]
+        if stream.FirstMsg == -1:
+            new_offs = len(stream.Messages) - current_msgs + offset
         else:
-            new_offs = self.first_msg_on_screen + offset
+            new_offs = stream.FirstMsg + offset
 
         if new_offs < 0:
             new_offs = 0
 
-        if new_offs > len(self.messages) - current_msgs:
+        if new_offs > len(stream.Messages) - current_msgs:
             new_offs = -1
 
-        self.first_msg_on_screen = new_offs
+        stream.FirstMsg = new_offs
         self.refresh()
+
 
     def refresh(self):
         """Redraw the message window"""
@@ -236,11 +263,12 @@ class LogWindow(Window):
         self.clear()
         if num_messages > 1:
             lineno = 1 # start at line 1 (0 is window border / title)
+            stream = self.logstreams[self.active_stream]
 
-            if self.first_msg_on_screen < 0: # non-scrolled
-                printed_msgs = self.messages[-num_messages:]
+            if stream.FirstMsg < 0: # non-scrolled
+                printed_msgs = stream.Messages[-num_messages:]
             else:
-                printed_msgs = self.messages[self.first_msg_on_screen:self.first_msg_on_screen+num_messages]
+                printed_msgs = stream.Messages[stream.FirstMsg:stream.FirstMsg + num_messages]
 
             for m in printed_msgs:
                 lines = self.write_msg(m, lineno)
@@ -270,7 +298,7 @@ def main(screen):
         w.refresh()
         time.sleep(.1)
 
-    w.log("Press any key...")
+    w.log_ts("Press any key...")
     w.refresh()
 
     while True:
