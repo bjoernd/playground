@@ -4,6 +4,7 @@
 import curses
 
 def runfunc(screen):
+    screen.keypad(1)
     logfile = open("keys.log", "w")
     while True:
         c = screen.getch()
