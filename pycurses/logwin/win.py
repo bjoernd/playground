@@ -316,7 +316,7 @@ class LogWindow(Window):
         """Redraw the message window"""
         num_messages = self.fit_messages()
         self.clear()
-        if num_messages > 1:
+        if num_messages > 0:
             lineno = 1 # start at line 1 (0 is window border / title)
             stream = self.logstreams[self.active_stream]
 
