@@ -1,5 +1,3 @@
-#![feature(old_io)]
-
 // XXX: template fn would be nice...
 fn dec_val(x : u32) -> u32 {
     println!("Decrementing");
@@ -121,17 +119,6 @@ fn vectors() {
     }
 }
 
-use std::old_io;
-
-fn user_io() {
-    println!("What's your name?");
-    let name = old_io::stdin()
-                    .read_line()
-                    .ok()
-                    .expect("Failed to read a line");
-    println!("Hello {}!", name.trim());
-}
-
 fn main() {
     println!("============================================================");
     formatting();
@@ -147,7 +134,5 @@ fn main() {
     fizzbuzz();
     println!("============================================================");
     vectors();
-    println!("============================================================");
-    user_io();
     println!("============================================================");
 }
