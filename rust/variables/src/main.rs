@@ -13,7 +13,6 @@ fn formatting() {
     let mut y : i32 = 1;
     print_x_y(x, y);
     x = dec_val(x);
-    x = dec_val(x);
     y = y - 2;
     print_x_y(x, y);
     println!("Hello, world {:x} {:x}!", x, y);
