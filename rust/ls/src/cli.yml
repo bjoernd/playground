@@ -7,3 +7,6 @@ args:
         short: l
         long: long
         takes_value: false
+    - verbose:
+        long: verbose
+        takes_value: false
