@@ -8,6 +8,14 @@ Because I can.
 
 ## Status
 
+This is still early work in progress.
+
+### Usage
+
+```
+cargo run -- [options]
+```
+
 ### Option support
 
 - [ ] -a / --all
