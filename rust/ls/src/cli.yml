@@ -1,0 +1,9 @@
+name: ls
+version: "1.0"
+author: Bjoern Doebel <bjoern.doebel@gmail.com>
+about: ls implemented in Rust
+args:
+    - long:
+        short: l
+        long: long
+        takes_value: false

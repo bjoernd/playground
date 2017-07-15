@@ -1,0 +1,7 @@
+[package]
+name = "ls"
+version = "0.1.0"
+authors = ["ubuntu"]
+
+[dependencies]
+clap = {version = "~2.19.0", features = ["yaml"]}
