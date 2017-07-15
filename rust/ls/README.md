@@ -66,5 +66,5 @@ Because I can.
 - [ ] -X
 - [ ] -Z, --context
 - [ ] -1
-- [x] --help
-- [x] --version
+- [x] *--help* display this help and exit
+- [x] *--version* output version information and exit
