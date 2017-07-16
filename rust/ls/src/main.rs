@@ -8,7 +8,6 @@ extern crate chrono;
 use std::io;
 use std::fs;
 use std::path::Path;
-use std::string;
 
 use clap::App;
 
@@ -59,10 +58,13 @@ fn dump_config(conf: &Configuration) {
 }
 
 fn iterate_path(p: &Path) -> Result<(), io::Error> {
+    debug!("iterate_path({:?})", p.to_str().unwrap_or_default());
     if p.is_dir() {
         for entry in fs::read_dir(p)? {
             let filename = entry?.file_name().into_string();
             match filename {
+                /* TODO: put name into a vector for later processing */
+                /* TODO: later, collect metadata into vector */
                 Ok(f) => println!("{}", f),
                 Err(f) => debug!("Failed to parse path {:?}", f),
             };
