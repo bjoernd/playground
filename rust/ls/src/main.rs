@@ -49,14 +49,15 @@ fn configure_logging(verbose: bool) -> Result<(), fern::InitError> {
     Ok(())
 }
 
+fn dump_config(conf: &Configuration) {
+    debug!("Long mode: {}", conf.long_mode);
+}
+
 fn main() {
     let conf = read_config();
     configure_logging(conf.verbose).expect("failed log initialization");
 
-    debug!("Long mode: {}", conf.long_mode);
-    error!("error");
-    warn!("warn");
-    info!("info");
-    debug!("debug");
-    trace!("trace");
+    if conf.verbose {
+        dump_config(&conf);
+    }
 }
