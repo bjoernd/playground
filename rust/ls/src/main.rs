@@ -5,6 +5,11 @@ extern crate clap;
 extern crate fern;
 extern crate chrono;
 
+use std::io;
+use std::fs;
+use std::path::Path;
+use std::string;
+
 use clap::App;
 
 struct Configuration {
@@ -53,6 +58,25 @@ fn dump_config(conf: &Configuration) {
     debug!("Long mode: {}", conf.long_mode);
 }
 
+fn iterate_path(p: &Path) -> Result<(), io::Error> {
+    if p.is_dir() {
+        for entry in fs::read_dir(p)? {
+            let filename = entry?.file_name().into_string();
+            match filename {
+                Ok(f) => println!("{}", f),
+                Err(f) => debug!("Failed to parse path {:?}", f),
+            };
+        }
+    } else {
+        match p.to_str() {
+            Some(t) => println!("{}", t),
+            None => (),
+        }
+    }
+
+    Ok(())
+}
+
 fn main() {
     let conf = read_config();
     configure_logging(conf.verbose).expect("failed log initialization");
@@ -60,4 +84,7 @@ fn main() {
     if conf.verbose {
         dump_config(&conf);
     }
+
+    let path = std::path::Path::new("."); // limit to cwd for now
+    iterate_path(&path).expect("failed iterating path");
 }
